@@ -44,7 +44,19 @@ class SMMachine:
 
     def getState(self):
         return self.state
-    
+
+    def getStartState(self):
+        return self.startState
+
+    def getMaxBinaryInputs(self):
+        return self.maxBinaryInputs
+
+    def getMaxBinaryOutputs(self):
+        return self.maxBinaryOutputs
+
+    def getMaxStates(self):
+        return self.maxStates
+
     def getOutput(self):
         return self.sBinaryOutput;
 

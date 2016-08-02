@@ -17,10 +17,24 @@ class Application(tkinter.Frame):
         self.master = master
         self.pack(fill=tkinter.BOTH)
         self.create_widgets()
+        #Note: the number of transitions won't necessarily match the current row index
+        #That is if some rows have been removed the grid layout manager still needs to
+        #use a row index greater than the last one used when adding a row below the last
+        #visible one already on the screen
         self.numTransitions=0
         self.totalColumns=0
         self.maxNumStates=1
+        self.startState=0
+        self.numBinaryInputs=0
+        self.maxNumStates=0
+        self.numBinaryOutputs=0
         self.stateMachine = None
+        self.gridVars = []
+        self.gridVarsIndex = 0
+        #Note: row index should only increment never decrement
+        #Even if we remove one or more rows and then add a new one, the grid layout
+        #manager should use a row index always greater than the last one used
+        self.m_CurrentRowIndex = 0
         return
     
     def create_widgets(self):
@@ -39,33 +53,92 @@ class Application(tkinter.Frame):
         lbl = tkinter.Label(self.body,text="Body")
         lbl.grid(row=0,column=0)
         return
+
+    def addStateTransitionEx(self,sBinaryInput,iState,iNextState,sBinaryOutput):
+        col=0
+        iBinaryIndex=0
+        self.numTransitions += 1
+        self.m_CurrentRowIndex += 1
+        for i in range(self.numBinaryInputs,0,-1):
+            self.gridVars.append(tkinter.IntVar())
+            sb = tkinter.Spinbox(self.body, textvariable=self.gridVars[self.gridVarsIndex], from_=0, to=1, width=3)
+            self.gridVars[self.gridVarsIndex].set(int(sBinaryInput[iBinaryIndex]))
+            sb.grid(row=self.m_CurrentRowIndex,column=col,sticky=STICKY_ALL_SIDES)
+            col += 1
+            self.gridVarsIndex += 1
+            iBinaryIndex += 1
+            
+        #cell for state
+        self.gridVars.append(tkinter.IntVar())
+        sb = tkinter.Spinbox(self.body, textvariable=self.gridVars[self.gridVarsIndex], from_=0, to=self.maxNumStates, width=3)
+        self.gridVars[self.gridVarsIndex].set(iState)            
+        sb.grid(row=self.m_CurrentRowIndex,column=col,sticky=STICKY_ALL_SIDES)
+        col += 1
+        self.gridVarsIndex += 1
+                      
+        #cell for next state
+        self.gridVars.append(tkinter.IntVar())
+        sb = tkinter.Spinbox(self.body, textvariable=self.gridVars[self.gridVarsIndex], from_=0, to=self.maxNumStates, width=3)
+        self.gridVars[self.gridVarsIndex].set(iNextState)            
+        sb.grid(row=self.m_CurrentRowIndex,column=col,sticky=STICKY_ALL_SIDES)
+        col += 1
+        self.gridVarsIndex += 1
+                      
+        iBinaryIndex = 0
+        for i in range(self.numBinaryOutputs,0,-1):
+            self.gridVars.append(tkinter.IntVar())
+            sb = tkinter.Spinbox(self.body, textvariable=self.gridVars[self.gridVarsIndex], from_=0, to=1, width=3, )
+            self.gridVars[self.gridVarsIndex].set(int(sBinaryOutput[iBinaryIndex]))
+            sb.grid(row=self.m_CurrentRowIndex,column=col,sticky=STICKY_ALL_SIDES)
+            col += 1
+            self.gridVarsIndex += 1
+            iBinaryIndex += 1
+        currRow = self.numTransitions
+        btn = tkinter.Button(self.body, text="Delete Row", command=lambda:self.removeStateTransition(currRow))
+        btn.grid(row=self.m_CurrentRowIndex,column=col,sticky=STICKY_ALL_SIDES)
+        return
     
     def addStateTransition(self):
         col = 0
         self.numTransitions += 1
+        self.m_CurrentRowIndex += 1
         for i in range(self.numBinaryInputs,0,-1):
-            sb = tkinter.Spinbox(self.body, from_=0, to=1, width=3)
-            sb.grid(row=self.numTransitions,column=col,sticky=STICKY_ALL_SIDES)
+            self.gridVars.append(tkinter.IntVar())
+            sb = tkinter.Spinbox(self.body,
+                                 textvariable=self.gridVars[self.gridVarsIndex],
+                                 from_=0, to=1, width=3)
+            self.gridVars[self.gridVarsIndex].set(0)
+            sb.grid(row=self.m_CurrentRowIndex,column=col,sticky=STICKY_ALL_SIDES)
             col += 1
+            self.gridVarsIndex += 1
         for i in range(0,2):
-            sb = tkinter.Spinbox(self.body, from_=0, to=self.maxNumStates, width=3)
-            sb.grid(row=self.numTransitions,column=col,sticky=STICKY_ALL_SIDES)
+            self.gridVars.append(tkinter.IntVar())
+            sb = tkinter.Spinbox(self.body,
+                                 textvariable=self.gridVars[self.gridVarsIndex],
+                                 from_=0, to=self.maxNumStates, width=3)
+            self.gridVars[self.gridVarsIndex].set(0)
+            sb.grid(row=self.m_CurrentRowIndex,column=col,sticky=STICKY_ALL_SIDES)
             col += 1
+            self.gridVarsIndex += 1
         for i in range(self.numBinaryOutputs,0,-1):
-            sb = tkinter.Spinbox(self.body, from_=0, to=1, width=3)
-            sb.grid(row=self.numTransitions,column=col,sticky=STICKY_ALL_SIDES)
+            self.gridVars.append(tkinter.IntVar())
+            sb = tkinter.Spinbox(self.body,
+                                 textvariable=self.gridVars[self.gridVarsIndex],
+                                 from_=0, to=1, width=3)
+            self.gridVars[self.gridVarsIndex].set(0)
+            sb.grid(row=self.m_CurrentRowIndex,column=col,sticky=STICKY_ALL_SIDES)
             col += 1
-        currRow = self.numTransitions
+            self.gridVarsIndex += 1
+        currRow = self.m_CurrentRowIndex
         btn = tkinter.Button(self.body, text="Delete Row", command=lambda:self.removeStateTransition(currRow))
-        btn.grid(row=self.numTransitions,column=col,sticky=STICKY_ALL_SIDES)
+        btn.grid(row=self.m_CurrentRowIndex,column=col,sticky=STICKY_ALL_SIDES)
         return
 
     def removeStateTransition(self,rowIndex):
         self.numTransitions -= 1
-        print("row:{}".format(rowIndex))
-        for widget in self.body.grid_slaves():
-            if(int(widget.grid_info()["row"]) == rowIndex):
-                widget.grid_forget()
+        l = list(self.body.grid_slaves(row=rowIndex))
+        for w in l:
+            w.grid_forget()
         return
     
     def saveStateMachine(self):
@@ -73,7 +146,7 @@ class Application(tkinter.Frame):
         rowIndex = 1
         colIndex = 0
         #row 0 is the header so start on row 1
-        for rowIndex in range(1,self.numTransitions+1):
+        for rowIndex in range(1,self.m_CurrentRowIndex+1):
             iState = -1
             iNextState = -1
             sBinaryInput = ""
@@ -106,23 +179,32 @@ class Application(tkinter.Frame):
 
     def openStateMachine(self):
         filename=tkinter.filedialog.askopenfilename()
-        #todo:
-        #1)open file and read contents as a new state machine
-        #2)clear frame gui and initialize it to match new state machine
-        return
-
-    def createNewStateMachine(self):
-        dlg = smParamsDialog.SMParamsDialog(self.master);
-        self.startState,self.numBinaryInputs, self.maxNumStates, self.numBinaryOutputs = dlg.result
-        #Total Columns = num binary inputs + 1 (for "state" column) + 1 (for "next state" column) + num binary outputs
-        self.totalColumns = self.numBinaryInputs + 2 + self.numBinaryOutputs;
-        #print("numBinaryInputs: {}".format(numBinaryInputs))
-        #print("numBinaryOutputs: {}".format(numBinaryOutputs))
-              
-        #clear frame gui and initialize it to a new blank state machine
+        sJSON = ""
+        with open(filename,'r') as f:
+            sJSON = f.read()
+        self.stateMachine = smMachine.SMMachine(self.startState,self.numBinaryInputs,self.maxNumStates, self.numBinaryOutputs)
+        self.stateMachine.loadFromJSON(sJSON)
+        self.startState = self.stateMachine.getStartState()
+        self.numBinaryInputs = self.stateMachine.getMaxBinaryInputs()
+        self.maxNumStates = self.stateMachine.getMaxStates()
+        self.numBinaryOutputs = self.stateMachine.getMaxBinaryOutputs()
+        self.numTransitions = 0
+        self.totalColumns=0
+        self.gridVars = []
+        self.gridVarsIndex = 0
+                      
+        #clear out frame gui body's children
         for widget in self.body.winfo_children():
             widget.destroy()
             
+        self.createHeaderRow()
+        transitions = self.stateMachine.transitions
+        for key in sorted(transitions.keys()):
+            transition = transitions[key]
+            self.addStateTransitionEx(transition["input"],transition["state"],transition["nextState"],transition["output"])
+        return
+
+    def createHeaderRow(self):
         #create a top row of labels as a header
         col = 0
         for i in range(self.numBinaryInputs,0,-1):
@@ -142,9 +224,28 @@ class Application(tkinter.Frame):
             lbl.grid(row=0, column=col, sticky=STICKY_ALL_SIDES)
             col += 1
         return
+    
+    def createNewStateMachine(self):
+        dlg = smParamsDialog.SMParamsDialog(self.master);
+        if(dlg.result == None):
+            return
+        self.startState, self.numBinaryInputs, self.maxNumStates, self.numBinaryOutputs = dlg.result
+        #Total Columns = num binary inputs + 1 (for "state" column) + 1 (for "next state" column) + num binary outputs
+        self.totalColumns = self.numBinaryInputs + 2 + self.numBinaryOutputs;
+        #print("numBinaryInputs: {}".format(numBinaryInputs))
+        #print("numBinaryOutputs: {}".format(numBinaryOutputs))
+              
+        #clear frame gui and initialize it to a new blank state machine
+        for widget in self.body.winfo_children():
+            widget.destroy()
+
+        self.createHeaderRow() 
+        return
 
 def main():
     root = tkinter.Tk()
+    root.title("State Machine Editor")
+    root.geometry("400x400")
     app = Application(root)
     root.mainloop()
     return
